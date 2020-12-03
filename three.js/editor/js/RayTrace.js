@@ -1,5 +1,3 @@
-import {Vector3} from "../../build/three.module";
-
 class Sphere {
 
 	constructor(radius, center) {
@@ -23,21 +21,21 @@ class Box {
 class Ray {
 
 	constructor(A, B) {
-		this.A = A;
-		this.B = B;
+		this.A = A.clone();
+		this.B = B.clone();
 	};
 
 	function
 	point_at_parameter(t) {
 
-		return this.A.add(this.B.multiplyScalar(t));
+		return this.A.clone().add(this.B.clone().multiplyScalar(t));
 
 	};
 
 }
 
-function color(ray, world){
-	return 0;
+function color(ray, world) {
+	return new THREE.Vector3(0, 0, 0);
 }
 
 export function exportRayTrace(scene, camera) {
@@ -63,18 +61,19 @@ export function exportRayTrace(scene, camera) {
 
 	// Process the image size according to the camera
 	var camera_position = camera.position;
-	var camera_lookat = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-	var camera_up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
-	var camera_x = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+	var camera_lookat = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
+	var camera_up = new THREE.Vector3(0, 1, 0).applyEuler(camera.rotation);
+	var camera_x = new THREE.Vector3(1, 0, 0).applyEuler(camera.rotation);
 
-	var half_height = camera.znear * Math.tan(camera.near);
+	var half_height = camera.near * Math.tan(camera.fov * Math.PI / 180);
 	var half_width = half_height * camera.aspect;
 
-	var image_center = camera.position.add(camera.near * camera_lookat);
-	var lower_left_corner = image_center - new THREE.Vector3(half_width * camera_x, half_height * camera_up, 0);
+	var image_center = camera.position.clone().add(camera_lookat.clone().multiplyScalar(camera.near));
+	var lower_left_corner = image_center.clone().sub(camera_x.clone().multiplyScalar(half_width).add(camera_up.clone().multiplyScalar(half_height)));
 
 	var height_pixel = 800;
-	var width_pixel = height_pixel * camera.aspect;
+	var width_pixel = Math.floor(height_pixel * camera.aspect);
+	var ret = `P3\n${height_pixel} ${width_pixel}\n255\n`;
 
 	var num_sample = 4;
 	var max_depth = 4;
@@ -82,17 +81,18 @@ export function exportRayTrace(scene, camera) {
 	// Do ray tracing for the scene.
 	for (let h = height_pixel; h > 0; h = h - 1) {
 		for (let w = 0; w < width_pixel; w = w + 1) {
-			var pixel_upper_left = lower_left_corner.add(camera_x.multiplyScalar(w)).add(camera_up.multiplyScalar(h));
-			var ray_colors = 0;
+			var pixel_upper_left = lower_left_corner.clone().add(camera_x.clone().multiplyScalar(2 * half_width * w / width_pixel)).add(camera_up.clone().multiplyScalar(2 * half_height * h / height_pixel));
+			var ray_colors = new THREE.Vector3(0, 0, 0);
 			for (let ns = 0; ns < num_sample; ns = ns + 1) {
-				var sample_position = pixel_upper_left.add(camera_x.multiplyScalar(Math.random())).add(camera_up.multiplyScalar(Math.random()));
+				var sample_position = pixel_upper_left.clone().add(camera_x.clone().multiplyScalar(2 * half_width * Math.random() / width_pixel)).add(camera_up.clone().multiplyScalar(2 * half_height * Math.random() / height_pixel));
 				var ray = new Ray(camera_position, sample_position);
-				ray_colors += color(ray, world);
+				ray_colors.add(color(ray, world));
 			}
-			console.log(ray_colors / num_sample);
+			ray_colors = ray_colors.divideScalar(num_sample);
+			ret += `${ray_colors.x} ${ray_colors.y} ${ray_colors.z}\n`;
 		}
 	}
 
-	return 0;
+	return ret;
 
 }

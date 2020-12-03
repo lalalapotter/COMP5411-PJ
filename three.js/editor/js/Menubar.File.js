@@ -1,17 +1,17 @@
 import * as THREE from '../../build/three.module.js';
 
-import { ColladaExporter } from '../../examples/jsm/exporters/ColladaExporter.js';
-import { DRACOExporter } from '../../examples/jsm/exporters/DRACOExporter.js';
-import { GLTFExporter } from '../../examples/jsm/exporters/GLTFExporter.js';
-import { OBJExporter } from '../../examples/jsm/exporters/OBJExporter.js';
-import { PLYExporter } from '../../examples/jsm/exporters/PLYExporter.js';
-import { STLExporter } from '../../examples/jsm/exporters/STLExporter.js';
+import {ColladaExporter} from '../../examples/jsm/exporters/ColladaExporter.js';
+import {DRACOExporter} from '../../examples/jsm/exporters/DRACOExporter.js';
+import {GLTFExporter} from '../../examples/jsm/exporters/GLTFExporter.js';
+import {OBJExporter} from '../../examples/jsm/exporters/OBJExporter.js';
+import {PLYExporter} from '../../examples/jsm/exporters/PLYExporter.js';
+import {STLExporter} from '../../examples/jsm/exporters/STLExporter.js';
 
-import { JSZip } from '../../examples/jsm/libs/jszip.module.min.js';
+import {JSZip} from '../../examples/jsm/libs/jszip.module.min.js';
 
-import { UIPanel, UIRow, UIHorizontalRule } from './libs/ui.js';
+import {UIHorizontalRule, UIPanel, UIRow} from './libs/ui.js';
 
-import { exportRayTrace } from "./RayTrace.js";
+import {exportRayTrace} from "./RayTrace.js";
 
 function MenubarFile( editor ) {
 
@@ -379,7 +379,9 @@ function MenubarFile( editor ) {
 
 		var currentScene = editor.scene;
 		var currentCamera = editor.camera;
-		console.log(exportRayTrace(currentScene, currentCamera));
+		var image_in_text = exportRayTrace(currentScene, currentCamera);
+		var data = new Blob([image_in_text], {type: 'text/plain'});
+		return window.URL.createObjectURL(data);
 
 	} );
 	options.add( option );
