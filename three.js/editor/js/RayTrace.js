@@ -12,6 +12,7 @@ class Sphere {
 		this.radius = radius;
 		this.center = center.clone();
 		this.material = material;
+		this.color = new THREE.Vector3(Math.random(), Math.random(), Math.random())
 	}
 
 }
@@ -30,8 +31,12 @@ Sphere.prototype.hit = function (ray, hit_record) {
 		hit_record.t = (-b - Math.sqrt(discriminant)) / (-2 * a);
 		hit_record.p = ray.point_at_parameter(hit_record.t);
 		hit_record.norm = hit_record.p.clone().sub(this.center).normalize();
-		hit_record.scatter_fn = lambert_scatter;
+		hit_record.scatter_fn = material_scatter_map[this.material.type];
+		let color = this.material.color;
+		// hit_record.attenuation = new THREE.Vector3(color.r, color.g, color.b);
+		hit_record.attenuation = this.color.clone();
 		return true;
+
 	}
 }
 
@@ -76,12 +81,8 @@ function random_in_unit_sphere() {
 }
 
 function lambert_scatter(ray, hit_record) {
-	// var target = hit_record.p.clone();
-	// var r = random_in_unit_sphere()
-	// target.add(hit_record.norm).add(r);
-	// scattered.A = hit_record.p.clone();
-	// scattered.B = target.sub(A).normalize();
-	return new Ray(hit_record.p.clone(), hit_record.p.clone().add(hit_record.norm).add(random_in_unit_sphere()));
+	hit_record.ray = new Ray(hit_record.p.clone(), hit_record.p.clone().add(hit_record.norm).add(random_in_unit_sphere()));
+	return true;
 }
 
 function reflect(ray_in, norm) {
@@ -90,27 +91,30 @@ function reflect(ray_in, norm) {
 
 function metal_scatter(ray, hit_record) {
 	var reflected_dir = reflect(ray.B, hit_record.norm);
-	var reflected_ray = new Ray(ray.A, ray.A.clone().add(reflected_dir));
+	hit_record.ray = new Ray(ray.A, ray.A.clone().add(reflected_dir));
+	// hit_record.attenuation = new THREE.Vector3(0.9, 0.9, 0.9);
+	return reflected_dir.dot(hit_record.norm) < 0;
 }
 
 let t_max = 10000;
-let max_depth = 4;
+let max_depth = 2;
 
 function color(ray, world, depth) {
 	let hit_record = new HitRecord(t_max, null, null);
-	if (world.hit(ray, hit_record) && depth < max_depth) {
-		// let norm = hit_record.norm;
-		return 0.5 * color(hit_record.material(ray, hit_record), world, depth + 1);
-		// return new THREE.Vector3(norm.x + 1, norm.y + 1, norm.z + 1).divideScalar(2);
+	if (world.hit(ray, hit_record)) {
+		if (depth < max_depth && hit_record.scatter_fn(ray, hit_record)) {
+			var attenuation = hit_record.attenuation.clone();
+			return attenuation.multiply(color(hit_record.ray, world, depth + 1));
+		} else {
+			return new THREE.Vector3(0, 0, 0);
+		}
 	}
-	// for (let sphere of world['Spheres']) {
-	// 	if (t > 0) {
-	// 		var hit_point = ray.point_at_parameter(t);
-	// 		var norm = hit_point.clone().sub(sphere.center).normalize();
-	// 		return new THREE.Vector3(norm.x + 1, norm.y + 1, norm.z + 1).divideScalar(2);
-	// 	}
-	// }
 	return new THREE.Vector3(0.5, 0.7, 1.0);
+}
+
+const material_scatter_map = {
+	"MeshLambertMaterial": lambert_scatter,
+	"MeshStandardMaterial": metal_scatter
 }
 
 class World {
@@ -130,7 +134,8 @@ class World {
 						hit_record.t = temp_hit_record.t;
 						hit_record.p = temp_hit_record.p.clone();
 						hit_record.norm = temp_hit_record.norm.clone();
-						hit_record.material = temp_hit_record.material;
+						hit_record.scatter_fn = temp_hit_record.scatter_fn;
+						hit_record.attenuation = temp_hit_record.attenuation;
 					}
 				}
 			}
@@ -170,11 +175,11 @@ export function exportRayTrace(scene, camera) {
 	var image_center = camera.position.clone().add(camera_lookat.clone().multiplyScalar(near));
 	var lower_left_corner = image_center.clone().sub(camera_x.clone().multiplyScalar(half_width).add(camera_up.clone().multiplyScalar(half_height)));
 
-	var height_pixel = 600;
+	var height_pixel = 800;
 	var width_pixel = Math.floor(height_pixel * camera.aspect);
 	var ret = `P3\n${width_pixel} ${height_pixel}\n255\n`;
 
-	var num_sample = 4;
+	var num_sample = 10;
 
 	// Do ray tracing for the scene.
 	for (let h = height_pixel; h > 0; h = h - 1) {
