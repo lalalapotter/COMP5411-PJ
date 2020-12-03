@@ -11,6 +11,8 @@ import { JSZip } from '../../examples/jsm/libs/jszip.module.min.js';
 
 import { UIPanel, UIRow, UIHorizontalRule } from './libs/ui.js';
 
+import { exportRayTrace } from "./RayTrace.js";
+
 function MenubarFile( editor ) {
 
 	function parseNumber( key, value ) {
@@ -232,7 +234,7 @@ function MenubarFile( editor ) {
 		var exporter = new DRACOExporter();
 
 		// TODO: Change to DRACOExporter's parse( geometry, onParse )?
-		var result = exporter.parse( object.geometry );
+		var result = exporter.parse( object );
 		saveArrayBuffer( result, 'model.drc' );
 
 	} );
@@ -368,6 +370,20 @@ function MenubarFile( editor ) {
 	} );
 	options.add( option );
 
+	// Export ray tracing rendered image
+
+	var option = new UIRow();
+	option.setClass( 'option' );
+	option.setTextContent( 'Export RayTracing' );
+	option.onClick( function () {
+
+		var currentScene = editor.scene;
+		var currentCamera = editor.camera;
+		console.log(exportRayTrace(currentScene, currentCamera));
+
+	} );
+	options.add( option );
+
 	//
 
 	options.add( new UIHorizontalRule() );
@@ -483,9 +499,7 @@ function MenubarFile( editor ) {
 
 		scene.traverse( function ( object ) {
 
-			var objectAnimations = editor.animations[ object.uuid ];
-
-			if ( objectAnimations !== undefined ) animations.push( ... objectAnimations );
+			animations.push( ... object.animations );
 
 		} );
 
