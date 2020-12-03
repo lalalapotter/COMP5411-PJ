@@ -28,16 +28,17 @@ function reflect(ray_in, norm) {
 
 function metal_scatter(ray, hit_record) {
 	var reflected_dir = reflect(ray.B, hit_record.norm);
-	hit_record.ray = new Ray(hit_record.p, hit_record.p.clone().add(reflected_dir));
+	hit_record.ray = new Ray(hit_record.p, hit_record.p.clone().add(reflected_dir).add(random_in_unit_sphere()));
 	return reflected_dir.dot(hit_record.norm) < 0;
 }
 
 let t_max = 10000;
-let max_depth = 5;
+let max_depth = 50;
 
 function color(ray, world, depth) {
 	let hit_record = new HitRecord(t_max, null, null);
 	if (world.hit(ray, hit_record)) {
+		// console.log(`Depth ${depth}: Hit sphere no. ${hit.index}`)
 		if (depth < max_depth && hit_record.scatter_fn(ray, hit_record)) {
 			var attenuation = hit_record.attenuation.clone();
 			return attenuation.multiply(color(hit_record.ray, world, depth + 1));
@@ -118,7 +119,7 @@ export function exportRayTrace(scene, camera) {
 			var ray_colors = new THREE.Vector3(0, 0, 0);
 			for (let ns = 0; ns < num_sample; ns = ns + 1) {
 				var sample_position = pixel_upper_left.clone().add(camera_x.clone().multiplyScalar(2 * half_width * Math.random() / width_pixel)).add(camera_up.clone().multiplyScalar(2 * half_height * Math.random() / height_pixel));
-				var ray = new Ray(camera_position, sample_position);
+				var ray = new Ray(camera_position, sample_position.sub(camera_position).normalize());
 				ray_colors.add(color(ray, world, 0));
 			}
 			ray_colors.divideScalar(num_sample).multiplyScalar(255);

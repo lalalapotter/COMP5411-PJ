@@ -11,7 +11,7 @@ class Sphere {
 	}
 
 	hit(ray, hit_record) {
-		var oc = this.center.clone().sub(ray.A);
+		var oc = ray.A.clone().sub(this.center);
 		var a = ray.B.dot(ray.B);
 		var b = 2 * ray.B.dot(oc);
 		var c = oc.dot(oc) - this.radius * this.radius;

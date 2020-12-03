@@ -4,7 +4,7 @@ class Ray {
 
 	constructor(A, B) {
 		this.A = A.clone();
-		this.B = B.clone().sub(A).normalize(); // unit direction vector
+		this.B = B.clone(); // unit direction vector
 	};
 
 	point_at_parameter(t) {
