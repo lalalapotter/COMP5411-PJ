@@ -513,7 +513,7 @@ function Viewport( editor ) {
 
 	// background
 
-	signals.sceneBackgroundChanged.add( function ( backgroundType, backgroundColor, backgroundTexture, backgroundEquirectangularTexture, environmentType ) {
+	signals.sceneBackgroundChanged.add( function ( backgroundType, backgroundColor, backgroundTexture, backgroundCubeTexture, backgroundEquirectangularTexture, environmentType ) {
 
 		pmremTexture = null;
 
@@ -536,6 +536,16 @@ function Viewport( editor ) {
 				if ( backgroundTexture ) {
 
 					scene.background = backgroundTexture;
+
+				}
+
+				break;
+				
+			case 'CubeTexture':
+				
+				if ( backgroundCubeTexture ) {
+
+					scene.background = backgroundCubeTexture;
 
 				}
 

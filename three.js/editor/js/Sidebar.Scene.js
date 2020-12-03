@@ -1,5 +1,5 @@
 import { UIPanel, UIBreak, UIRow, UIColor, UISelect, UIText, UINumber } from './libs/ui.js';
-import { UIOutliner, UITexture } from './libs/ui.three.js';
+import { UIOutliner, UITexture, UICubeTexture } from './libs/ui.three.js';
 
 function SidebarScene( editor ) {
 
@@ -156,6 +156,7 @@ function SidebarScene( editor ) {
 			backgroundType.getValue(),
 			backgroundColor.getHexValue(),
 			backgroundTexture.getValue(),
+			backgroundCubeTexture.getValue(),
 			backgroundEquirectangularTexture.getValue(),
 			environmentType.getValue()
 		);
@@ -169,6 +170,7 @@ function SidebarScene( editor ) {
 		'None': 'None',
 		'Color': 'Color',
 		'Texture': 'Texture',
+		'CubeTexture': 'CubeTexture',
 		'Equirectangular': 'Equirect'
 
 	} ).setWidth( '150px' );
@@ -190,6 +192,11 @@ function SidebarScene( editor ) {
 	backgroundTexture.setDisplay( 'none' );
 	backgroundRow.add( backgroundTexture );
 
+
+	var backgroundCubeTexture = new UICubeTexture().setMarginLeft( '90px' ).onChange( onBackgroundChanged );
+	backgroundCubeTexture.setDisplay( 'none' );
+	backgroundRow.add( backgroundCubeTexture );
+
 	var backgroundEquirectangularTexture = new UITexture().setMarginLeft( '8px' ).onChange( onBackgroundChanged );
 	backgroundEquirectangularTexture.setDisplay( 'none' );
 	backgroundRow.add( backgroundEquirectangularTexture );
@@ -205,6 +212,7 @@ function SidebarScene( editor ) {
 		backgroundType.setWidth( type === 'None' ? '150px' : '110px' );
 		backgroundColor.setDisplay( type === 'Color' ? '' : 'none' );
 		backgroundTexture.setDisplay( type === 'Texture' ? '' : 'none' );
+		backgroundCubeTexture.setDisplay( type === 'CubeTexture' ? '' : 'none' );
 		backgroundEquirectangularTexture.setDisplay( type === 'Equirectangular' ? '' : 'none' );
 
 	}
@@ -356,18 +364,19 @@ function SidebarScene( editor ) {
 				backgroundType.setValue( "Color" );
 				backgroundColor.setHexValue( scene.background.getHex() );
 				backgroundTexture.setValue( null );
+				backgroundCubeTexture.setValue( null );
 				backgroundEquirectangularTexture.setValue( null );
 
 			}
 
 			// TODO: Add Texture/EquirectangularTexture support
 
-		} else {
-
+		} else{
+			
 			backgroundType.setValue( "None" );
-			backgroundTexture.setValue( null );
+			backgroundCubeTexture.setValue( null );
 			backgroundEquirectangularTexture.setValue( null );
-
+			backgroundTexture.setValue( null );
 		}
 
 		if ( scene.environment ) {
