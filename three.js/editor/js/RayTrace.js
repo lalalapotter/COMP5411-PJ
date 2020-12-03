@@ -1,75 +1,12 @@
+import {Ray} from "./Ray.js";
+import {Sphere} from "./Sphere.js";
+
 class HitRecord {
 	constructor(t, p, norm) {
 		this.t = t;
 		this.p = p;
 		this.norm = norm;
 	}
-}
-
-class Sphere {
-
-	constructor(radius, center, material) {
-		this.radius = radius;
-		this.center = center.clone();
-		this.material = material;
-		this.color = new THREE.Vector3(Math.random(), Math.random(), Math.random())
-	}
-
-}
-
-
-Sphere.prototype.hit = function (ray, hit_record) {
-	var oc = this.center.clone().sub(ray.A);
-	var a = ray.B.dot(ray.B);
-	var b = 2 * ray.B.dot(oc);
-	var c = oc.dot(oc) - this.radius * this.radius;
-	var discriminant = b * b - 4 * a * c;
-
-	if (discriminant < 0) {
-		return false;
-	} else {
-		hit_record.t = (-b - Math.sqrt(discriminant)) / (-2 * a);
-		hit_record.p = ray.point_at_parameter(hit_record.t);
-		hit_record.norm = hit_record.p.clone().sub(this.center).normalize();
-		hit_record.scatter_fn = material_scatter_map[this.material.type];
-		let color = this.material.color;
-		// hit_record.attenuation = new THREE.Vector3(color.r, color.g, color.b);
-		hit_record.attenuation = this.color.clone();
-		return true;
-
-	}
-}
-
-class Box { // Box interaction W.I.P.
-
-	constructor(center, height, width, length) {
-		this.center = center;
-		this.height = height;
-		this.width = width;
-		this.length = length;
-	}
-
-}
-
-Box.prototype.hit = (ray) => {
-	return false;
-}
-
-class Ray {
-
-	function
-
-	constructor(A, B) {
-		this.A = A.clone();
-		this.B = B.clone().sub(A).normalize(); // unit direction vector
-	};
-
-	point_at_parameter(t) {
-
-		return this.A.clone().add(this.B.clone().multiplyScalar(t));
-
-	};
-
 }
 
 function random_in_unit_sphere() {
@@ -91,17 +28,17 @@ function reflect(ray_in, norm) {
 
 function metal_scatter(ray, hit_record) {
 	var reflected_dir = reflect(ray.B, hit_record.norm);
-	hit_record.ray = new Ray(ray.A, ray.A.clone().add(reflected_dir));
-	// hit_record.attenuation = new THREE.Vector3(0.9, 0.9, 0.9);
+	hit_record.ray = new Ray(hit_record.p, hit_record.p.clone().add(reflected_dir).add(random_in_unit_sphere()));
 	return reflected_dir.dot(hit_record.norm) < 0;
 }
 
 let t_max = 10000;
-let max_depth = 2;
+let max_depth = 50;
 
 function color(ray, world, depth) {
 	let hit_record = new HitRecord(t_max, null, null);
 	if (world.hit(ray, hit_record)) {
+		// console.log(`Depth ${depth}: Hit sphere no. ${hit.index}`)
 		if (depth < max_depth && hit_record.scatter_fn(ray, hit_record)) {
 			var attenuation = hit_record.attenuation.clone();
 			return attenuation.multiply(color(hit_record.ray, world, depth + 1));
@@ -119,9 +56,7 @@ const material_scatter_map = {
 
 class World {
 	constructor() {
-		this.Boxes = [];
 		this.Spheres = [];
-		this.Lights = [];
 		this.hit = (ray, hit_record) => {
 			let hit_anything = false;
 			let temp_hit_record = new HitRecord(t_max, null, null);
@@ -134,8 +69,9 @@ class World {
 						hit_record.t = temp_hit_record.t;
 						hit_record.p = temp_hit_record.p.clone();
 						hit_record.norm = temp_hit_record.norm.clone();
-						hit_record.scatter_fn = temp_hit_record.scatter_fn;
+						hit_record.scatter_fn = material_scatter_map[sphere.material.type];
 						hit_record.attenuation = temp_hit_record.attenuation;
+						hit_record.index = this['Spheres'].indexOf(sphere);
 					}
 				}
 			}
@@ -148,17 +84,12 @@ export function exportRayTrace(scene, camera) {
 
 	// Convert three.js objects to our own objects.
 	var world = new World();
-
 	for (let item of scene.children) {
 		if (item.type !== "Mesh") {
 			continue;
 		}
-		switch (item.name) {
-			case "Box":
-				world.Boxes.push(new Box(item.position, item.scale.x, item.scale.y, item.scale.z));
-				break;
-			case "Sphere":
-				world.Spheres.push(new Sphere(item.scale.x, item.position, item.material));
+		if (item.name === "Sphere"){
+			world.Spheres.push(new Sphere(item.scale.x, item.position, item.material));
 		}
 	}
 
@@ -188,7 +119,7 @@ export function exportRayTrace(scene, camera) {
 			var ray_colors = new THREE.Vector3(0, 0, 0);
 			for (let ns = 0; ns < num_sample; ns = ns + 1) {
 				var sample_position = pixel_upper_left.clone().add(camera_x.clone().multiplyScalar(2 * half_width * Math.random() / width_pixel)).add(camera_up.clone().multiplyScalar(2 * half_height * Math.random() / height_pixel));
-				var ray = new Ray(camera_position, sample_position);
+				var ray = new Ray(camera_position, sample_position.sub(camera_position).normalize());
 				ray_colors.add(color(ray, world, 0));
 			}
 			ray_colors.divideScalar(num_sample).multiplyScalar(255);
