@@ -380,6 +380,7 @@ function MenubarFile( editor ) {
 		var currentScene = editor.scene;
 		var currentCamera = editor.camera;
 		var image_in_text = exportRayTrace(currentScene, currentCamera);
+		console.log(image_in_text);
 		var data = new Blob([image_in_text], {type: 'text/plain'});
 		return window.URL.createObjectURL(data);
 
