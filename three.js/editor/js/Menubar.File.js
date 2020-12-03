@@ -382,7 +382,8 @@ function MenubarFile( editor ) {
 		var image_in_text = exportRayTrace(currentScene, currentCamera);
 		console.log(image_in_text);
 		var data = new Blob([image_in_text], {type: 'text/plain'});
-		return window.URL.createObjectURL(data);
+		// return window.URL.createObjectURL(data);
+		saveString( data, 'raytracing.ppm' )
 
 	} );
 	options.add( option );
