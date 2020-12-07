@@ -18,7 +18,7 @@ function random_in_unit_sphere() {
 }
 
 function lambert_scatter(ray, hit_record) {
-	hit_record.ray = new Ray(hit_record.p.clone(), hit_record.p.clone().add(hit_record.norm).add(random_in_unit_sphere()));
+	hit_record.ray = new Ray(hit_record.p.clone(), random_in_unit_sphere().normalize());
 	return true;
 }
 
@@ -28,7 +28,7 @@ function reflect(ray_in, norm) {
 
 function metal_scatter(ray, hit_record) {
 	var reflected_dir = reflect(ray.B, hit_record.norm);
-	hit_record.ray = new Ray(hit_record.p, hit_record.p.clone().add(reflected_dir).add(random_in_unit_sphere()));
+	hit_record.ray = new Ray(hit_record.p, reflected_dir.clone().add(random_in_unit_sphere().multiplyScalar(0.2)).normalize());
 	return reflected_dir.dot(hit_record.norm) < 0;
 }
 
@@ -110,7 +110,7 @@ export function exportRayTrace(scene, camera) {
 	var width_pixel = Math.floor(height_pixel * camera.aspect);
 	var ret = `P3\n${width_pixel} ${height_pixel}\n255\n`;
 
-	var num_sample = 10;
+	var num_sample = 50;
 
 	// Do ray tracing for the scene.
 	for (let h = height_pixel; h > 0; h = h - 1) {
